@@ -4,7 +4,7 @@
 
 # ---------- API Key ----------
 
-API_KEY="7ef05ccb-0c07-40bf-8c69-9563aeb57ad0"
+API_KEY="xxxxxx-xxxxxxx-xxxxxxxx"
 
 # ---------- Color Variables ----------
 
