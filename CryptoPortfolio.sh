@@ -4,7 +4,7 @@
 
 # ---------- API Key ----------
 
-API_KEY="xxxxxxxx-xxxxxx-xxxxxx-xxxxx"
+API_KEY="7ef05ccb-0c07-40bf-8c69-9563aeb57ad0"
 
 # ---------- Color Variables ----------
 
@@ -42,24 +42,10 @@ view_portfolio_function()
     sort data.csv > tmp.csv	
     mv tmp.csv data.csv       
 
-    # ----- Table Format -----
-    separator=+--------------+-----------+----------------+-------------+
-    rows="| %-13s| %-10.2f| %-15.8f| %11.2f |\n"
-    TableWidth=60
-
-    # ----- Top Separator -----
-    printf "${CYAN}%.${TableWidth}s\n" "$separator"
-
-    # ----- Table Headers -----
-    printf "| %-13s| %-10s| %-15s| %-11s |\n" Asset Price Balance Value
-
-    # ----- Separator -----
-    printf "%.${TableWidth}s\n" "$separator"
-
     # ----- Declare Total Value Arrary -----
     total_value_array=(0)
 
-    # ----- Loop through File -----
+    # ----- Loop Asset, Balance File -----
     INPUT=data.csv
     OLDIFS=$IFS
     IFS=','
@@ -73,29 +59,58 @@ view_portfolio_function()
         # ----- Add Coin Value to Total Value Array -----
         total_value_array=(${total_value_array[@]} $coin_value)
 
-        # ----- Display Assets in Table Row -----
-        printf "${RESET}$rows" $asset $coin_price $balance $coin_value
+        # ----- Create Temp File w/ Asset, Price, Balance, Value -----
+        echo "$asset, $coin_price, $balance, $coin_value" >> tmp_file.csv
 
     done < $INPUT
     IFS=$OLDIFS
 
-    # ----- End of Assets Separator -----
-    printf "${GREEN}%.${TableWidth}s\n" "$separator"
-
     # ----- Sum Total Value Array -----
     total_value=$( IFS="+"; bc <<< "${total_value_array[*]}" )
 
+    # ----- Table Format -----
+    separator=+--------------+-----------+----------------+------------+-------+
+    rows="| %-13s|%10.2f |%15.8f |%11.2f |%6.1f |\n"
+    TableWidth=70
+
+    # ----- Top Separator -----
+    printf "${CYAN}%.${TableWidth}s\n" "$separator"
+
+    # ----- Table Headers -----
+    printf "| %-13s|%10s |%15s |%11s |%6s |\n" Asset Price Balance Value %
+
+    # ----- Separator -----
+    printf "%.${TableWidth}s\n" "$separator"
+
+    # ----- Loop Through temp_file.csv -----
+    file=tmp_file.csv
+    IFS=","
+
+    while read asset price balance value
+    do
+        portfolio_percentage=`echo $value \/ $total_value \* 100 | bc -l`
+
+         # ----- Display Assets in Table Row -----
+        printf "${RESET}$rows" $asset $price $balance $value $portfolio_percentage
+
+    done < $file
+ 
+    # ----- End of Assets Separator -----
+    printf "${GREEN}%.${TableWidth}s\n" "$separator"
+
     # ----- Total Value Table Row -----
-    total_row="| %41s | %11.2f |\n"
-    printf "$total_row" "Total" $total_value
+    total_row="| %41s |%11.2f |%6s |\n"
+    printf "$total_row" "Total" $total_value 100%
 
     # ----- Bottom Separator -----
     printf "%.${TableWidth}s\n" "$separator"
 
-    # ------ Store Total Value in CSV -----
+    # ----- Delete Temp File -----
+    rm tmp_file.csv
+
+    # ----- Store Total Value in CSV -----
     printf "$(date '+%F %T %Z'), " >> value.csv
     printf "%0.2f\n" $total_value >> value.csv
-
 
     printf "${RESET}\n"    
     display_menu_function
